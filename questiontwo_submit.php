@@ -6,15 +6,16 @@ if(isset($_POST['save_select']))
 {
     $lga = $_POST['lga'];
 
-    // Select the result for the specified polling unit
-    $sql = "SELECT * FROM announced_pu_results WHERE polling_unit_uniqueid = '$lga'";
-    $result = mysqli_query($conn, $sql);
-    $row = mysqli_fetch_assoc($result);
+    $query1 = "SELECT * FROM lga WHERE lga_id = '$lga'";
+    $result = mysqli_query($conn, $query1);
+    while ($row = mysqli_fetch_assoc($result)) {
+      $lganame = $row['lga_name'];
+    }
 
     if($result)
     {
         $_SESSION['status'] = "Result Table Generated";
-        header("Location: questiontwo.php?lga_id=$lga");
+        header("Location: questiontwo.php?lga_id=$lga&lga_name=$lganame");
     }
     else
     {

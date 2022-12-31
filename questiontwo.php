@@ -3,7 +3,7 @@ session_start();
 include('config/db_connect.php');
 $polling_uniti = "SELECT * FROM lga";
 $polling_result = mysqli_query($conn, $polling_uniti);
-
+$polling_row = mysqli_fetch_array($polling_result);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -29,7 +29,8 @@ $polling_result = mysqli_query($conn, $polling_uniti);
 
                 <div class="card mt-5">
                     <div class="card-header">
-                        <h4>LGA</h4>
+                        <h4><?php
+                        if (isset($_GET['lga_name'])) { echo $_GET['lga_name'];}?> LGA</h4>
                     </div>
                     <div class="card-body">
 
@@ -52,9 +53,9 @@ $polling_result = mysqli_query($conn, $polling_uniti);
                         <?php
                         if (isset($_GET['lga_id'])) {
                         $id = $_GET['lga_id'];
-                        $sqlq = "SELECT * FROM announced_pu_results AS t1
-                        INNER JOIN polling_unit AS t2
-                        ON t1.polling_unit_uniqueid = t2.polling_unit_id WHERE lga_id=$id";
+                        $sqlq = "SELECT *, SUM(announced_pu_results.party_score) AS totalResult FROM polling_unit 
+                        LEFT JOIN announced_pu_results ON polling_unit.uniqueid=announced_pu_results.polling_unit_uniqueid 
+                        WHERE polling_unit.lga_id= ".$id." GROUP BY announced_pu_results.party_abbreviation ";
                         $query1 = mysqli_query($conn, $sqlq);
                         $sn=1;
                         if (mysqli_num_rows($query1) > 0) {    
@@ -72,45 +73,19 @@ $polling_result = mysqli_query($conn, $polling_uniti);
                                 <tbody>
                                     <?php
                                         $sn=1;
-                                        foreach($query1 as $data) { ?>
+                                        $totalResult =0;
+                                        foreach($query1 as $data) { $totalResult += $data['totalResult'];?>
                                         <tr>
                                         <th scope="row"><?php echo $sn; $sn++ ?></th>
                                         <td><?php echo $data['polling_unit_name']; ?></td>
                                         <td><?php echo $data['party_abbreviation']; ?></td>
-                                        <td><?php echo $data['party_score']; ?></td>
+                                        <td><?php echo $data['totalResult']; ?></td>
                                         </tr>
                                     <?php }?>
                                 </tbody>
                             </table>
                             <?php
-                                // $sql2 = "SELECT *, SUM(party_score) AS total_votes FROM announced_pu_results AS t1
-                                // INNER JOIN polling_unit AS t2 
-                                // ON t1.polling_unit_uniqueid = t2.polling_unit_id WHERE lga_id=$id GROUP BY $id";
-                                //$sql2 = "SELECT *, SUM(party_score) AS total_votes FROM announced_pu_results
-                                //WHERE lga_name = '$id'
-                                //GROUP BY lga_name";
-                                //$result2 = mysqli_query($conn, $sql2);
-                                $polling_unit_votes = array();
-                                while ($row = mysqli_fetch_assoc($query1)) {
-                                    if (!isset($polling_unit_votes[$row['polling_unit_id']])) {
-                                        $polling_unit_votes[$row['polling_unit_id']] = 0;
-                                    }
-                                    $polling_unit_votes[$row['polling_unit_id']] += $row['ward_id'];
-                                    
-                                    // foreach ($polling_unit_votes as $value) {
-                                    //     echo $value, "\n";
-                                    // }
-                                }
-                                $total_votes = array_sum($polling_unit_votes);
-                                echo '<div class="d-flex justify-content-center">Total Votes: '.$total_votes.'</div>';
-                                // if (mysqli_num_rows($result2) > 0) {
-                                //     // Output the result
-                                //     while($row = mysqli_fetch_assoc($result2)) {
-                                //         echo '<div class="d-flex justify-content-center">Total Votes: '.$row["total_votes"].'</div>';
-                                //     }
-                                // } else {
-                                //     echo '<div class="d-flex justify-content-center">Total Votes: 0</div>';
-                                // }
+                                echo '<div class="d-flex justify-content-center">Total Votes: '.number_format($totalResult,0).'</div>';
                             ?>
                             <?php }}else { ?>
                                 <div class="d-flex justify-content-center">No Data Found For LGA</div>
